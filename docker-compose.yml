@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  flask_app:
+    image: flask_app
+    ports:
+      - "5000:5000" # This is optional because Traefik will handle routing.
+    depends_on:
+      - postgres
+      - traefik
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: production
+      FLASK_BASE_URL: "http://flask_app:5000"
+      EXPRESS_BASE_URL: "http://express_server:8081"
+      EXPRESS_WS_URL: "ws://express_server:8081"
+      SQLALCHEMY_DATABASE_URI: "postgresql://root:root@postgres:5432/root"
+      SECRET_KEY: "your_secret_key"
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP routing for Flask
+      - "traefik.http.routers.flask_app.rule=Host(`flask.localhost`)"
+      - "traefik.http.routers.flask_app.entrypoints=http"
+      - "traefik.http.services.flask_app.loadbalancer.server.port=5000"
+
+  express_server:
+    image: express_server
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+      - redis
+      - traefik
+    environment:
+      EXPRESS_BASE_URL: "http://express_server:8081"
+      EXPRESS_WS_URL: "ws://express_server:8081"
+      MONGO_URL: "mongodb://mongo:27017/document_db"
+      REDIS_HOST: "redis"
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "root"
+    networks:
+      - app_network
+    volumes:
+      - ./express_server:/app
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP (REST API) route
+      - "traefik.http.routers.express_server.rule=Host(`api.express.localhost`)"
+      - "traefik.http.routers.express_server.entrypoints=http"
+      - "traefik.http.services.express_server.loadbalancer.server.port=8081"
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: root
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  mongo:
+    image: mongo:5
+    command: ["--noauth"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app_network
+
+  redis:
+    image: redis:6
+    command: ["redis-server", "--requirepass", "root"]
+    environment:
+      REDIS_PASSWORD: "root"
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.ws.address=:8081"
+      - "--metrics.prometheus=true"  # Enable Prometheus metrics
+      - "--metrics.prometheus.addrouterslabels=true"
+      - "--metrics.prometheus.addserviceslabels=true"
+      - "--log.level=DEBUG"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app_network
+
+  
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"  # Prometheus UI
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app_network
+    deploy:
+      placement:
+        constraints: [node.role == manager]  # Run on a manager node
+      replicas: 1
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8082:8082"  # cAdvisor UI
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - app_network
+    deploy:
+      placement:
+        constraints: [node.role == worker]  # Run on worker nodes
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"  # Grafana UI
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app_network
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  app_network:
+    driver: overlay
+
+volumes:
+  postgres_data:
+  mongo_data:
+  grafana_data:
