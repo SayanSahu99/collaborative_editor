@@ -3,54 +3,52 @@
 {% block title %}Home | Collaborative Editor{% endblock %}
 
 {% block content %}
-<header class="bg-blue-500 text-white py-20 text-center">
-    <h2 class="text-4xl font-bold mb-4">Welcome to Collaborative Editor</h2>
-    <p class="text-lg mb-8">Collaborate in real-time with your team.</p>
+<header class="py-20 text-center">
+    <h2 class="text-4xl font-bold mb-4 text-black">Welcome to Collaborative Editor</h2>
+    <p class="text-lg mb-8 text-gray-700">Collaborate in real-time with your team.</p>
     
     {% if not current_user.is_authenticated %}
-        <!-- If the user is not logged in -->
-        <a href="/auth/register" class="bg-white text-blue-600 font-bold py-2 px-6 rounded shadow hover:bg-gray-100">
+        <a href="/auth/register" class="bg-black text-white font-bold py-2 px-6 rounded shadow hover:bg-gray-800">
             Get Started
         </a>
     {% else %}
-        <!-- If the user is logged in -->
         <form id="createPadForm" class="flex justify-center items-end gap-4">
             <div class="flex flex-col">
                 <label for="title" class="text-lg font-bold mb-2">Pad Title</label>
                 <input type="text" id="title" name="title" placeholder="Enter pad title..." required
-                       class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-black">
+                       class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black text-black">
             </div>
             <div class="flex flex-col">
                 <label for="duration" class="text-lg font-bold mb-2">Lifespan (days)</label>
                 <input type="number" id="duration" name="duration" value="7" min="1" max="365" required
-                       class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-black">
+                       class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black text-black">
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-white text-blue-600 font-bold py-2 px-6 rounded shadow hover:bg-gray-100">
+                <button type="submit" class="bg-black text-white font-bold py-2 px-6 rounded shadow hover:bg-gray-800">
                     Create Pad
                 </button>
             </div>
         </form>        
         <div id="padLink" style="display: none;" class="mt-4 text-lg">
-            <p>Pad created! Access it here: <a id="padUrl" href="#" class="text-blue-300 underline"></a></p>
+            <p>Pad created! Access it here: <a id="padUrl" href="#" class="text-black underline"></a></p>
         </div>
     {% endif %}
 </header>
 
-<section class="py-16 bg-gray-100 text-center">
-    <h3 class="text-3xl font-bold mb-12">Why Choose Us?</h3>
+<section class="py-16 text-center">
+    <h3 class="text-3xl font-bold mb-12 text-black">Why Choose Us?</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="bg-white p-6 rounded shadow">
-            <h4 class="text-xl font-bold mb-4">Real-Time Collaboration</h4>
-            <p class="text-gray-600">Edit documents seamlessly with your team.</p>
+        <div class="bg-gray-100 p-6 rounded shadow">
+            <h4 class="text-xl font-bold mb-4 text-black">Real-Time Collaboration</h4>
+            <p class="text-gray-700">Edit documents seamlessly with your team.</p>
         </div>
-        <div class="bg-white p-6 rounded shadow">
-            <h4 class="text-xl font-bold mb-4">Secure and Reliable</h4>
-            <p class="text-gray-600">Your data is encrypted and stored securely.</p>
+        <div class="bg-gray-100 p-6 rounded shadow">
+            <h4 class="text-xl font-bold mb-4 text-black">Secure and Reliable</h4>
+            <p class="text-gray-700">Your data is encrypted and stored securely.</p>
         </div>
-        <div class="bg-white p-6 rounded shadow">
-            <h4 class="text-xl font-bold mb-4">Simple and Intuitive</h4>
-            <p class="text-gray-600">Designed for productivity and ease of use.</p>
+        <div class="bg-gray-100 p-6 rounded shadow">
+            <h4 class="text-xl font-bold mb-4 text-black">Simple and Intuitive</h4>
+            <p class="text-gray-700">Designed for productivity and ease of use.</p>
         </div>
     </div>
 </section>

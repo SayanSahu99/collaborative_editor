@@ -31,18 +31,19 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - mongo
+      - mongo-router
       - redis
       - traefik
     environment:
       EXPRESS_BASE_URL: "http://express_server:8081"
       EXPRESS_WS_URL: "ws://express_server:8081"
-      MONGO_URL: "mongodb://mongo:27017/document_db"
+      MONGO_URL: "mongodb://mongo-router:27017/document_db"
       REDIS_HOST: "redis"
       REDIS_PORT: 6379
       REDIS_PASSWORD: "root"
     networks:
       - app_network
+      - mongo_network
     volumes:
       - ./express_server:/app
     labels:
@@ -64,15 +65,86 @@ services:
     networks:
       - app_network
 
-  mongo:
+  # Config Servers
+  mongo-config1:
     image: mongo:5
-    command: ["--noauth"]
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all --port 27017 --noauth
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+      - "27019:27017"
     networks:
-      - app_network
+      - mongo_network
+
+  mongo-config2:
+    image: mongo:5
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27020:27017"
+    networks:
+      - mongo_network
+
+  mongo-config3:
+    image: mongo:5
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27021:27017"
+    networks:
+      - mongo_network
+
+  # Shard Replica Set 1
+  mongo-shard1a:
+    image: mongo:5
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27022:27017"
+    networks:
+      - mongo_network
+
+  mongo-shard1b:
+    image: mongo:5
+    command: mongod --shardsvr --replSet shard1 --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27023:27017"
+    networks:
+      - mongo_network
+
+  # Shard Replica Set 2
+  mongo-shard2a:
+    image: mongo:5
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27024:27017"
+    networks:
+      - mongo_network
+
+  mongo-shard2b:
+    image: mongo:5
+    command: mongod --shardsvr --replSet shard2 --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27025:27017"
+    networks:
+      - mongo_network
+
+  # Mongos Router
+  mongo-router:
+    image: mongo:5
+    command: mongos --configdb configReplSet/mongo-config1:27017,mongo-config2:27017,mongo-config3:27017 --bind_ip_all --port 27017 --noauth
+    ports:
+      - "27018:27017"
+    networks:
+      - mongo_network
+    depends_on:
+      - mongo-config1
+      - mongo-config2
+      - mongo-config3
+      - mongo-shard1a
+      - mongo-shard1b
+      - mongo-shard2a
+      - mongo-shard2b
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:6
@@ -109,8 +181,7 @@ services:
     ports:
       - "9090:9090"  # Prometheus UI
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - app_network
     deploy:
@@ -118,20 +189,14 @@ services:
         constraints: [node.role == manager]  # Run on a manager node
       replicas: 1
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+  node_exporter:
+    image: prom/node-exporter:latest
     ports:
-      - "8082:8082"  # cAdvisor UI
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
+      - "9100:9100"
     networks:
       - app_network
     deploy:
-      placement:
-        constraints: [node.role == worker]  # Run on worker nodes
+      mode: global  # Run on all Docker nodes in Swarm
 
   grafana:
     image: grafana/grafana:latest
@@ -149,6 +214,8 @@ services:
         constraints: [node.role == manager]
 
 networks:
+  mongo_network:
+    driver: bridge
   app_network:
     driver: overlay
 
@@ -156,3 +223,10 @@ volumes:
   postgres_data:
   mongo_data:
   grafana_data:
+  config_data1:
+  config_data2:
+  config_data3:
+  shard1a_data:
+  shard1b_data:
+  shard2a_data:
+  shard2b_data:
