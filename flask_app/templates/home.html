@@ -3,7 +3,7 @@
 {% block title %}Home | Collaborative Editor{% endblock %}
 
 {% block content %}
-<header class="py-20 text-center">
+<header class="py-12 text-center">
     <h2 class="text-4xl font-bold mb-4 text-black">Welcome to Collaborative Editor</h2>
     <p class="text-lg mb-8 text-gray-700">Collaborate in real-time with your team.</p>
     
@@ -35,7 +35,71 @@
     {% endif %}
 </header>
 
-<section class="py-16 text-center">
+<!-- Animation or Video Section -->
+<section class="py-2 text-center">
+    <div id="typing-demo" class="bg-gray-100 p-6 rounded shadow text-left max-w-4xl mx-auto relative">
+        <div class="text-black border border-gray-300 p-4 rounded bg-white min-h-[150px] font-mono overflow-hidden relative">
+            <span id="collaborative-text"></span>
+            <span id="cursor" class="text-black bg-black w-[2px] h-6 inline-block align-middle animate-blink"></span>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script>
+    const typingUsers = [
+        { color: "text-red-500", text: "User A: Welcome to our document!" },
+        { color: "text-green-500", text: "User B: Let's collaborate in real time." },
+        { color: "text-blue-500", text: "User C: I'll make some edits here..." },
+    ];
+
+    const container = document.getElementById("collaborative-text");
+    const cursor = document.getElementById("cursor");
+
+    let userIndex = 0;
+    let charIndex = 0;
+
+    function typeEffect() {
+        const user = typingUsers[userIndex];
+        if (charIndex < user.text.length) {
+            const span = document.createElement("span");
+            span.classList.add(user.color);
+            span.textContent = user.text.charAt(charIndex);
+            container.appendChild(span);
+            charIndex++;
+            setTimeout(typeEffect, 100); // Typing speed
+        } else {
+            setTimeout(() => {
+                container.innerHTML = ""; // Clear text
+                charIndex = 0;
+                userIndex = (userIndex + 1) % typingUsers.length;
+                typeEffect();
+            }, 1500); // Pause before switching user
+        }
+    }
+
+    typeEffect();
+
+    // Add blinking cursor animation
+    cursor.classList.add("animate-blink");
+</script>
+
+<style>
+    .animate-blink {
+        animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+        from, to {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0;
+        }
+    }
+</style>
+
+<section class="py-16 bg-gray-100 text-center">
     <h3 class="text-3xl font-bold mb-12 text-black">Why Choose Us?</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="bg-gray-100 p-6 rounded shadow">
@@ -52,6 +116,7 @@
         </div>
     </div>
 </section>
+
 
 <script>
     document.getElementById('createPadForm')?.addEventListener('submit', function (e) {

@@ -4,7 +4,7 @@ services:
   flask_app:
     image: flask_app
     ports:
-      - "5000:5000" # This is optional because Traefik will handle routing.
+      - "5000:5000"
     depends_on:
       - postgres
       - traefik
@@ -20,8 +20,6 @@ services:
       - app_network
     labels:
       - "traefik.enable=true"
-
-      # HTTP routing for Flask
       - "traefik.http.routers.flask_app.rule=Host(`flask.localhost`)"
       - "traefik.http.routers.flask_app.entrypoints=http"
       - "traefik.http.services.flask_app.loadbalancer.server.port=5000"
@@ -43,13 +41,10 @@ services:
       REDIS_PASSWORD: "root"
     networks:
       - app_network
-      - mongo_network
     volumes:
       - ./express_server:/app
     labels:
       - "traefik.enable=true"
-
-      # HTTP (REST API) route
       - "traefik.http.routers.express_server.rule=Host(`api.express.localhost`)"
       - "traefik.http.routers.express_server.entrypoints=http"
       - "traefik.http.services.express_server.loadbalancer.server.port=8081"
@@ -65,14 +60,14 @@ services:
     networks:
       - app_network
 
-  # Config Servers
+  # Mongo Config Servers
   mongo-config1:
     image: mongo:5
     command: mongod --configsvr --replSet configReplSet --bind_ip_all --port 27017 --noauth
     ports:
       - "27019:27017"
     networks:
-      - mongo_network
+      - app_network
 
   mongo-config2:
     image: mongo:5
@@ -80,7 +75,7 @@ services:
     ports:
       - "27020:27017"
     networks:
-      - mongo_network
+      - app_network
 
   mongo-config3:
     image: mongo:5
@@ -88,16 +83,16 @@ services:
     ports:
       - "27021:27017"
     networks:
-      - mongo_network
+      - app_network
 
-  # Shard Replica Set 1
+  # Mongo Shard Replica Sets
   mongo-shard1a:
     image: mongo:5
     command: mongod --shardsvr --replSet shard1 --bind_ip_all --port 27017 --noauth
     ports:
       - "27022:27017"
     networks:
-      - mongo_network
+      - app_network
 
   mongo-shard1b:
     image: mongo:5
@@ -105,16 +100,15 @@ services:
     ports:
       - "27023:27017"
     networks:
-      - mongo_network
+      - app_network
 
-  # Shard Replica Set 2
   mongo-shard2a:
     image: mongo:5
     command: mongod --shardsvr --replSet shard2 --bind_ip_all --port 27017 --noauth
     ports:
       - "27024:27017"
     networks:
-      - mongo_network
+      - app_network
 
   mongo-shard2b:
     image: mongo:5
@@ -122,16 +116,16 @@ services:
     ports:
       - "27025:27017"
     networks:
-      - mongo_network
+      - app_network
 
-  # Mongos Router
+  # Mongo Router
   mongo-router:
     image: mongo:5
     command: mongos --configdb configReplSet/mongo-config1:27017,mongo-config2:27017,mongo-config3:27017 --bind_ip_all --port 27017 --noauth
     ports:
       - "27018:27017"
     networks:
-      - mongo_network
+      - app_network
     depends_on:
       - mongo-config1
       - mongo-config2
@@ -163,30 +157,29 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.http.address=:80"
       - "--entrypoints.ws.address=:8081"
-      - "--metrics.prometheus=true"  # Enable Prometheus metrics
+      - "--metrics.prometheus=true"
       - "--metrics.prometheus.addrouterslabels=true"
       - "--metrics.prometheus.addserviceslabels=true"
       - "--log.level=DEBUG"
     ports:
       - "80:80"
-      - "8080:8080"  # Traefik dashboard
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - app_network
 
-  
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"  # Prometheus UI
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - app_network
     deploy:
       placement:
-        constraints: [node.role == manager]  # Run on a manager node
+        constraints: [node.role == manager]
       replicas: 1
 
   node_exporter:
@@ -196,12 +189,12 @@ services:
     networks:
       - app_network
     deploy:
-      mode: global  # Run on all Docker nodes in Swarm
+      mode: global
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"  # Grafana UI
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -214,10 +207,8 @@ services:
         constraints: [node.role == manager]
 
 networks:
-  mongo_network:
-    driver: bridge
   app_network:
-    driver: overlay
+    driver: overlay  # Ensure this is using the overlay driver
 
 volumes:
   postgres_data:
