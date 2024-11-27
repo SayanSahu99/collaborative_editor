@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-  // const socket = new ReconnectingWebSocket(`${window.expressWsUrl}/?padId=${encodeURIComponent(window.padId)}`);
-  const socket = new ReconnectingWebSocket(`ws://127.0.0.1:8081/?padId=${encodeURIComponent(window.padId)}`);
+  // const socket = new ReconnectingWebSocket(`ws://127.0.0.1:8081/?padId=${encodeURIComponent(window.padId)}`);
+  const socket = new ReconnectingWebSocket(`ws://172.16.81.203:8081/?padId=${encodeURIComponent(window.padId)}`);
   
   const connection = new sharedb.Connection(socket);
   const doc = connection.get('examples', padId);

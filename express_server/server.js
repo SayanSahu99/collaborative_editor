@@ -121,12 +121,10 @@ function startServer() {
 
     app.use(cors());
 
-    // Serve bundle.js from express_server directory
     app.use('/express_server', express.static(path.join(__dirname)));
 
     app.use(bodyParser.json());
 
-    // API endpoint to ensure a pad exists
     app.post('/create-pad', (req, res) => {
         const { padId } = req.body;
         if (!padId) {
@@ -141,11 +139,9 @@ function startServer() {
         });
     });
 
-    // WebSocket server for ShareDB
     var server = http.createServer(app);
     var wss = new WebSocket.Server({ server: server });
     wss.on('connection', function (ws, req) {
-        // Parse padId from WebSocket query parameters
         const urlParams = new URLSearchParams(req.url.split('?')[1]);
         const padId = urlParams.get('padId');
 
@@ -168,9 +164,8 @@ function startServer() {
         });
     });
 
-    server.listen(8081); // Use a different port (e.g., 8081) for ShareDB
+    server.listen(8081); 
     console.log('ShareDB server listening on '+process.env.EXPRESS_BASE_URL);
 }
 
-// Start the server
 startServer();

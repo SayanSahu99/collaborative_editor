@@ -7,17 +7,14 @@ var QuillCursors = require('quill-cursors');
 var tinycolor = require('tinycolor2');
 require('dotenv').config(); 
 
-// Register the rich-text type with ShareDB
 sharedb.types.register(richText.type);
 Quill.register('modules/cursors', QuillCursors);
 
-// Main logic
-// Adjusted client.js
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Client script loaded!");
 
     const padId = window.padId;
-    const username = window.username || "Anonymous"; // Get username from Flask
+    const username = window.username || "Anonymous"; 
     const userColor = tinycolor.random().toHexString();
 
     if (!padId) {
@@ -55,40 +52,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 ['link', 'image', 'video'],
                 ['clean'],
             ],
-            cursors: true, // Enable collaborative cursors
+            cursors: true, 
         },
         placeholder: 'Start typing...',
     });
 
-    // Apply styling and scrollbar for the editor
     const editorContainer = document.querySelector('#editor');
     const toolbarContainer = document.querySelector('.ql-toolbar');
     const editorContent = document.querySelector('.ql-container');
 
-    // Remove borders and shadows
     toolbarContainer.style.border = 'none';
     toolbarContainer.style.boxShadow = 'none';
     editorContent.style.border = 'none';
     editorContent.style.boxShadow = 'none';
     editorContainer.style.marginBottom = '10px';
 
-    // Ensure the editor blends with the background
     editorContent.style.backgroundColor = 'transparent';
     editorContainer.style.backgroundColor = 'transparent';
 
 
     const cursors = quill.getModule('cursors');
 
-    // Connect to ShareDB presence
     const presence = doc.connection.getDocPresence('examples', padId);
     presence.subscribe(function (error) {
         if (error) console.error("Presence subscription error:", error);
     });
 
-    // Create local presence
     const localPresence = presence.create(username);
 
-    // Update cursor position on selection change or text change
     function updateCursorPosition() {
         const range = quill.getSelection();
         if (range) {
@@ -100,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Listen for both selection-change and text-change events
     quill.on('selection-change', function (range, oldRange, source) {
         if (source === 'user') {
             updateCursorPosition();
@@ -113,25 +103,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Listen for remote presence updates
     presence.on('receive', function (id, data) {
-        if (!data || id === username) return; // Ignore local updates
+        if (!data || id === username) return; 
         cursors.createCursor(id, data.name, data.color);
         cursors.moveCursor(id, data.range);
     });
 
-    // Load document content or initialize empty
     quill.setContents(doc.data || { ops: [{ insert: '\n' }] });
 
-    // Track local changes and submit to ShareDB
     quill.on('text-change', function (delta, oldDelta, source) {
         if (source !== 'user') return;
         doc.submitOp(delta, function (err) {
             if (err) console.error("Error submitting operation:", err);
         });
     });
-
-    // Handle remote changes
+    
     doc.on('op', function (op, source) {
         if (source) return;
         quill.updateContents(op);

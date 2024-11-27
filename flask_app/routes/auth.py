@@ -11,14 +11,13 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Fetch user from the database
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(url_for('main.home'))  # Redirect to home on successful login
+            return redirect(url_for('main.home')) 
         return render_template('login.html', error='Invalid credentials')
 
-    return render_template('login.html')  # Render login page for GET requests
+    return render_template('login.html')  
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
@@ -26,21 +25,19 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Check if the username already exists
         if User.query.filter_by(username=username).first():
             return render_template('login.html', error='Username already exists')
 
-        # Create a new user
         new_user = User(username=username)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('auth.login'))  # Redirect to login page after registration
+        return redirect(url_for('auth.login'))  
 
-    return render_template('login.html')  # Render register page for GET requests
+    return render_template('login.html')  
 
 @auth.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.home'))  # Redirect to home after logout
+    return redirect(url_for('main.home'))  

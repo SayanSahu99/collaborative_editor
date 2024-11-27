@@ -48,6 +48,18 @@ services:
       - "traefik.http.routers.express_server.rule=Host(`api.express.localhost`)"
       - "traefik.http.routers.express_server.entrypoints=http"
       - "traefik.http.services.express_server.loadbalancer.server.port=8081"
+  
+  pad_cleaner:
+    image: pad_cleaner
+    depends_on:
+      - redis_pad
+      - postgres
+      - mongo-router
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://root:root@postgres:5432/root
+      - REDIS_URL=redis://:root@redis_pad:6379/0
+    networks:
+      - app_network
 
   postgres:
     image: postgres:13
@@ -147,6 +159,16 @@ services:
       REDIS_PASSWORD: "root"
     ports:
       - "6379:6379"
+    networks:
+      - app_network
+  
+  redis_pad:
+    image: redis:6
+    command: ["redis-server", "--requirepass", "root"]
+    environment:
+      REDIS_PASSWORD: "root"
+    ports:
+      - "6380:6380"
     networks:
       - app_network
 

@@ -2,21 +2,15 @@ FROM python:3.9-slim
 
 RUN mkdir /flask_app
 
-# Set the working directory inside the container
 WORKDIR /flask_app
 
-# Copy requirements and install dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project into the container
 COPY . .
 
-# Set the `PYTHONPATH` so Flask can find the `flask_app` module
 ENV PYTHONPATH=/app
 
-# Expose port 5000
 EXPOSE 5000
 
-# Run the Flask app
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

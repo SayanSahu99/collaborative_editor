@@ -18,8 +18,8 @@ class User(UserMixin, db.Model):
 class Pad(db.Model):
     __tablename__ = 'pads'
 
-    id = db.Column(db.String, primary_key=True)  # UUID as a string
+    id = db.Column(db.String, primary_key=True)  
     title = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
-    expires_at = db.Column(db.DateTime, nullable=False)  # Explicit expiration datetime
+    expires_at = db.Column(db.DateTime, nullable=False)  
 
